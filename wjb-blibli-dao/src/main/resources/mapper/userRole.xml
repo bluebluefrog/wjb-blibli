@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD MAPPER 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjb.blibli.dao.UserRoleDao">
+
+    <!--与js不同java连接查询需要提前新建好对应entity中的特定字段，这里是roleName和roleCode名字一定要相同-->
+    <select id="getUserRoleByUserId" parameterType="java.lang.Long" resultType="com.wjb.blibli.domain.auth.UserRole">
+        select
+            ur.*,
+            ar.name roleName,
+            ar.code roleCode
+        from
+            t_user_role ur
+            left join t_auth_role ar
+            on ur.roleId = ar.id
+        where
+            ur.userId=#{userId}
+    </select>
+
+    <insert id="addUserRole" parameterType="com.wjb.blibli.domain.auth.UserRole">
+        insert into
+            t_user_role(
+                userId,
+                roleId,
+                createTime
+            )
+            values(
+                #{userId},
+                #{roleId},
+                #{createTime}
+            )
+    </insert>
+</mapper>

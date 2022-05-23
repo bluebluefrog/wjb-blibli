@@ -1,0 +1,4 @@
+# Project exclude paths
+/wjb-blibli-controller/target/
+/wjb-blibli-dao/target/
+/wjb-blibli-service/target/

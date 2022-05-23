@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD MAPPER 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjb.blibli.dao.AuthRoleElementOperationDao">
+
+    <!--由于这里查询的实体类需要关联其他表,mybatis不会给我们自动封装类中关联的类,需要我们自己指定-->
+    <!--指定关联-->
+    <!--关联表的具体列对应-->
+    <resultMap id="AuthElementOperationResultMap" type="com.wjb.blibli.domain.auth.AuthRoleElementOperation">
+        <id column="id" property="id"/>
+        <id column="roleId" property="roleId"/>
+        <id column="elementOperationId" property="elementOperationId"/>
+
+        <association property="authElementOperation" javaType="com.wjb.blibli.domain.auth.AuthElementOperation">
+
+            <id column="elementName" property="elementName"/>
+            <id column="elementCode" property="elementCode"/>
+            <id column="operationType" property="operationType"/>
+        </association>
+    </resultMap>
+
+    <!--这里使用resultMap不同的返回方式,是一个定义好的标签-->
+    <select id="getRoleElementOperationByRoleIds" parameterType="java.util.Set" resultMap="AuthElementOperationResultMap">
+        select
+            areo.*,
+            aeo.elementName,
+            aeo.elementCode,
+            aeo.operationType
+        from
+            t_auth_role_element_operation areo
+            left join t_auth_element_operation aeo on areo.elementOperationId = aeo.id
+        where
+            areo.roleId in
+            <foreach collection="roleIdSet" item="roleId" index="index" open="(" close=")" separator=",">
+            #{roleId}
+            </foreach>
+
+    </select>
+
+</mapper>

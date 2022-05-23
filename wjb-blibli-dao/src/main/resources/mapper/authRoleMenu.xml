@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD MAPPER 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjb.blibli.dao.AuthRoleMenuDao">
+
+    <!--由于这里查询的实体类需要关联其他表,mybatis不会给我们自动封装类中关联的类,需要我们自己指定-->
+    <resultMap id="AuthMenuResultMap" type="com.wjb.blibli.domain.auth.AuthRoleMenu">
+        <id column="id" property="id"/>
+        <id column="roleId" property="roleId"/>
+        <id column="menuId" property="menuId"/>
+    <!--指定关联-->
+        <association property="authMenu" javaType="com.wjb.blibli.domain.auth.AuthMenu">
+            <!--关联表的具体列对应-->
+            <id column="name" property="name"/>
+            <id column="code" property="code"/>
+        </association>
+    </resultMap>
+
+    <!--这里使用resultMap不同的返回方式,是一个定义好的标签-->
+    <select id="getAuthRoleMenusByRoleIds" parameterType="java.util.Set" resultMap="AuthMenuResultMap">
+        select
+            arm.*,
+            am.name,
+            am.code
+        from
+            t_auth_role_menu arm
+            left join t_auth_menu am
+            on arm.menuId=am.id
+        where
+            arm.roleId in
+            <foreach collection="roleIdSet" item="roleId" index="index" open="(" close=")" separator=",">
+                #{roleId}
+            </foreach>
+
+    </select>
+
+</mapper>
