@@ -219,14 +219,16 @@ public class FastDFSUtil {
         fastFileStorageClient.deleteFile(filePath);
     }
 
+    //分片获取视频
     public void viewVideoOnlineBySlices(HttpServletRequest request, HttpServletResponse response, String url) throws Exception {
-        //获取fastDfs中的视频数据
+        //获取fastDfs中的视频数据 参数1组名 参数2路径
+        //FileInfo中包含数据文件ip地址 检验码 创建时间 大小等
         FileInfo fileInfo = fastFileStorageClient.queryFileInfo(DEFAULT_GROUP, url);
         //获取视频的总大小
         long totalFileSize = fileInfo.getFileSize();
         //获取文件实际所在路径
         String path = httpFdfaStorageAddr + url;
-        //获取所有header
+        //获取所有header 请求头的名称
         Enumeration<String> headerNames = request.getHeaderNames();
         //放header的map
         Map<String, Object> headers = new HashMap<>();
@@ -238,7 +240,8 @@ public class FastDFSUtil {
             headers.put(header, request.getHeader(header));
         }
         //分片处理需要特殊处理的参数
-        //拼接range
+
+        //拼接range range是分片的区域
         String rangeStr = request.getHeader("Range");
         //存放分片开始和结束的位置
         String[] range;
@@ -250,7 +253,7 @@ public class FastDFSUtil {
         range = rangeStr.split("bytes=|-");
         long beagin = 0;
         if (range.length >= 2) {
-            //说明只有开始没有结束
+            //有开始
             beagin = Long.parseLong(range[1]);
         }
         long end = totalFileSize - 1;
@@ -260,8 +263,10 @@ public class FastDFSUtil {
         }
         //计算分片长度
         long len = (end - beagin) + 1;
-        //拼接content（告诉前段返回的range在什么范围）
+
+        //拼接response content（告诉前端返回的range在什么范围）
         String content = "bytes" + " " + beagin + "-" + end + "/" + totalFileSize;
+
         //相应参数设置
         response.setHeader("Content-range", content);
         response.setHeader("Accept-Ranges", "bytes");
@@ -270,6 +275,7 @@ public class FastDFSUtil {
         response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
         //请求方法
         //get方法返回输出流OutputStream参数1链接2请求头3响应
+        //方法会对response做进一步的处理 使用get请求将数据写入到response中
         HttpUtil.get(url, headers, response);
     }
 }
