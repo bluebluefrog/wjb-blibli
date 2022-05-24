@@ -70,11 +70,11 @@ public class VideoServiceImpl implements VideoService {
     public void addVideoLike(Long videoId, Long userId) {
         Video video = videoDao.getVideoById(videoId);
         if(video == null){
-            throw new ConditionException("非法视频！");
+            throw new ConditionException("illgel video！");
         }
         VideoLike videoLike = videoDao.getVideoLikeByVideoIdAndUserId(videoId, userId);
         if(videoLike != null){
-            throw new ConditionException("已经赞过！");
+            throw new ConditionException("like already！");
         }
         videoLike = new VideoLike();
         videoLike.setVideoId(videoId);
@@ -95,5 +95,42 @@ public class VideoServiceImpl implements VideoService {
         result.put("count", count);
         result.put("like", like);
         return result;
+    }
+
+    public Map<String, Object> getVideoCollection(Long videoId, Long currentUserId) {
+        //获得总收藏量
+        Long count = videoDao.getVideoCollections(videoId);
+        //获得用户是否收藏
+        VideoCollection videoCollection = videoDao.getVideoCollectionByVideoIdAndUserId(videoId, currentUserId);
+        boolean like = videoCollection != null;
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("count", count);
+        result.put("like", like);
+
+        return result;
+    }
+
+    public void deleteVideoCollection(Long videoId, Long currentUserId) {
+        videoDao.deleteVideoCollection(videoId, currentUserId);
+    }
+
+    @Transactional
+    public void addVideoCollection(VideoCollection videoCollection, Long currentUserId) {
+        Long videoId = videoCollection.getVideoId();
+        Long groupId = videoCollection.getGroupId();
+        if (videoId == null || groupId == null) {
+            throw new ConditionException("bad param!");
+        }
+        Video videoById = videoDao.getVideoById(videoId);
+        if (videoById == null) {
+            throw new ConditionException("illgel video!");
+        }
+        //先删除后添加
+        //删除
+        videoDao.deleteVideoCollection(videoId, currentUserId);
+        //添加
+        videoCollection.setUserId(currentUserId);
+        videoCollection.setCreateTime(new Date());
+        videoDao.addVideoCollection(videoCollection);
     }
 }

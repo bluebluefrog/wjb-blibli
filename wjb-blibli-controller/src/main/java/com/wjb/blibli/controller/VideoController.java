@@ -4,6 +4,7 @@ import com.wjb.blibli.controller.support.UserSupport;
 import com.wjb.blibli.domain.JsonResponse;
 import com.wjb.blibli.domain.PageResult;
 import com.wjb.blibli.domain.Video;
+import com.wjb.blibli.domain.VideoCollection;
 import com.wjb.blibli.service.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -63,6 +64,30 @@ public class VideoController {
         }
         Map<String, Object> result = videoService.getVideoLikes(videoId, userId);
         return new JsonResponse<>(result);
+    }
+
+    @PostMapping("/video-collections")
+    public JsonResponse<String> addVideoCollection(@RequestBody VideoCollection videoCollection){
+        Long currentUserId = userSupport.getCurrentUserId();
+        videoService.addVideoCollection(videoCollection, currentUserId);
+        return JsonResponse.success();
+    }
+
+    @DeleteMapping("/video-collections")
+    public JsonResponse<String> deleteVideoCollection(@RequestParam Long videoId){
+        Long currentUserId = userSupport.getCurrentUserId();
+        videoService.deleteVideoCollection(videoId, currentUserId);
+        return JsonResponse.success();
+    }
+
+    @GetMapping("/video-collections")
+    public JsonResponse<String> getVideoCollection(@RequestParam Long videoId){
+        Long currentUserId = null;
+        try{
+            currentUserId = userSupport.getCurrentUserId();
+        }catch(Exception e){}
+        Map<String,Object> result=videoService.getVideoCollection(videoId, currentUserId);
+        return JsonResponse.success();
     }
 }
 
