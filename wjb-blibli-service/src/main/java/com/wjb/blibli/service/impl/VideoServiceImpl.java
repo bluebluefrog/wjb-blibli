@@ -1,9 +1,7 @@
 package com.wjb.blibli.service.impl;
 
 import com.wjb.blibli.dao.VideoDao;
-import com.wjb.blibli.domain.PageResult;
-import com.wjb.blibli.domain.Video;
-import com.wjb.blibli.domain.VideoTag;
+import com.wjb.blibli.domain.*;
 import com.wjb.blibli.domain.exception.ConditionException;
 import com.wjb.blibli.service.VideoService;
 import com.wjb.blibli.util.FastDFSUtil;
@@ -69,5 +67,33 @@ public class VideoServiceImpl implements VideoService {
         fastDFSUtil.viewVideoOnlineBySlices(request, response, url);
     }
 
+    public void addVideoLike(Long videoId, Long userId) {
+        Video video = videoDao.getVideoById(videoId);
+        if(video == null){
+            throw new ConditionException("非法视频！");
+        }
+        VideoLike videoLike = videoDao.getVideoLikeByVideoIdAndUserId(videoId, userId);
+        if(videoLike != null){
+            throw new ConditionException("已经赞过！");
+        }
+        videoLike = new VideoLike();
+        videoLike.setVideoId(videoId);
+        videoLike.setUserId(userId);
+        videoLike.setCreateTime(new Date());
+        videoDao.addVideoLike(videoLike);
+    }
 
+    public void deleteVideoLike(Long videoId, Long userId) {
+        videoDao.deleteVideoLike(videoId, userId);
+    }
+
+    public Map<String, Object> getVideoLikes(Long videoId, Long userId) {
+        Long count = videoDao.getVideoLikes(videoId);
+        VideoLike videoLike = videoDao.getVideoLikeByVideoIdAndUserId(videoId, userId);
+        boolean like = videoLike != null;
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", count);
+        result.put("like", like);
+        return result;
+    }
 }

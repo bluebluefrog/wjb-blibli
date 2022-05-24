@@ -5,6 +5,7 @@ import com.wjb.blibli.domain.Video;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
 
 public interface VideoService {
     void addVideo(Video video);
@@ -12,4 +13,10 @@ public interface VideoService {
     PageResult<Video> pageListVideos(Integer size, Integer no, String area);
 
     void viewVideoOnlineBySlices(HttpServletRequest request, HttpServletResponse response, String url) throws Exception;
+
+    void addVideoLike(Long videoId, Long userId);
+
+    void deleteVideoLike(Long videoId, Long userId);
+
+    Map<String, Object> getVideoLikes(Long videoId, Long userId);
 }
