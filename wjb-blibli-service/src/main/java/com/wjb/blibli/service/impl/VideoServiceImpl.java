@@ -3,6 +3,7 @@ package com.wjb.blibli.service.impl;
 import com.wjb.blibli.dao.VideoDao;
 import com.wjb.blibli.domain.*;
 import com.wjb.blibli.domain.exception.ConditionException;
+import com.wjb.blibli.service.UserCoinService;
 import com.wjb.blibli.service.VideoService;
 import com.wjb.blibli.util.FastDFSUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -146,7 +147,16 @@ public class VideoServiceImpl implements VideoService {
     }
 
     public Map<String, Object> getVideoCoins(Long videoId, Long currentUserId) {
-        return null;
+        //获取总投币数
+        Long count = videoDao.getVideoCoinsAmount(videoId);
+        //获取用户是否投币
+        VideoCoin videoCoins = videoDao.getVideoCoinByVideoIdAndUserId(videoId, currentUserId);
+        boolean like = videoCoins != null;
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("count", count);
+        result.put("like", like);
+
+        return result;
     }
 
     @Transactional
@@ -162,6 +172,29 @@ public class VideoServiceImpl implements VideoService {
             throw new ConditionException("illgel video!");
         }
         //查询用户是否有足够硬币
-        use
+        Integer userCoinsAmount = userCoinService.getUserCoinsAmount(currentUserId);
+        userCoinsAmount = userCoinsAmount == null ? 0 : userCoinsAmount;
+        if (amount > userCoinsAmount) {
+            throw new ConditionException("coin not enough!");
+        }
+        //查询当前用户对食品投了多少币
+        VideoCoin dbVideoCoin = videoDao.getVideoCoinByVideoIdAndUserId(videoId, currentUserId);
+        //新增视频投币
+        if (dbVideoCoin == null) {
+            videoCoin.setUserId(currentUserId);
+            videoCoin.setCreateTime(new Date());
+            videoDao.addVideoCoin(videoCoin);
+        }else{
+            Integer dbAmount = dbVideoCoin.getAmount();
+            dbAmount+=amount;
+            //更新视频投币
+            videoCoin.setUserId(currentUserId);
+            videoCoin.setAmount(dbAmount);
+            videoCoin.setUpdateTime(new Date());
+            videoDao.updateVideoCoin(videoCoin);
+        }
+        //更新用户硬币总数
+        userCoinService.updateUserCoinsAmount(currentUserId, (userCoinsAmount - amount));
+
     }
 }
