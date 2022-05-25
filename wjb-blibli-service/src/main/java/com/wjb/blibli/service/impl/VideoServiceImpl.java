@@ -220,40 +220,53 @@ public class VideoServiceImpl implements VideoService {
     }
 
     public Map<String, Object> getVideoComment(Integer size, Integer no, Long videoId) {
-        Video video = videoDao.getVideoById(videoId);
-        if (video == null) {
-            throw new ConditionException("illgel video!");
-        }
-        //设置分页查询
-        HashMap<String, Object> params = new HashMap<>();
-        params.put("start", (no - 1) * size);
-        params.put("limit", size);
-        params.put("videoId", videoId);
-        Integer total = videoDao.pageCountVideoComments(params);
-        List<VideoComment> comments = new ArrayList<>();
-        //总数大于0则进行
-        if (total > 0) {
-            //查询以及评论
-            comments = videoDao.pageListVideoComments(params);
-            //筛选出一级评论的id
-            List<Long> parentIdList = comments.stream().map(VideoComment::getId).collect(Collectors.toList());
-            //根据一级评论id查询二级评论
-            List<VideoComment> childComments = videoDao.batchGetVideoCommentsByRootIds(parentIdList);
-            //筛选一级评论用户id
-            Set<Long> parentUserId = comments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
-            //筛选二级评论用户id
-            Set<Long> childUserId = childComments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
-            //获取视频发布用户UserId
-            Set<Long> userIdList = new HashSet<>();
-            userIdList.add(video.getUserId());
-            userIdList.addAll(parentUserId);
-            userIdList.addAll(childUserId);
-            //查询用户信息一级二级评论用户和视频发布用户一起查询
-            userService.
-
-
-            userService.getUserInfoByIds(parentIdList);
-        }
+//        Video video = videoDao.getVideoById(videoId);
+//        if (video == null) {
+//            throw new ConditionException("illgel video!");
+//        }
+//        //设置分页查询
+//        HashMap<String, Object> params = new HashMap<>();
+//        params.put("start", (no - 1) * size);
+//        params.put("limit", size);
+//        params.put("videoId", videoId);
+//        Integer total = videoDao.pageCountVideoComments(params);
+//        List<VideoComment> comments = new ArrayList<>();
+//        //总数大于0则进行
+//        if (total > 0) {
+//            //查询以及评论
+//            comments = videoDao.pageListVideoComments(params);
+//            //筛选出一级评论的id
+//            List<Long> parentIdList = comments.stream().map(VideoComment::getId).collect(Collectors.toList());
+//            //根据一级评论id查询二级评论
+//            List<VideoComment> childComments = videoDao.batchGetVideoCommentsByRootIds(parentIdList);
+//            //筛选一级评论用户id
+//            Set<Long> parentUserId = comments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
+//            //筛选二级评论用户id
+//            Set<Long> childUserId = childComments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
+//            //获取视频发布用户UserId
+//            Set<Long> userIdList = new HashSet<>();
+//            userIdList.add(video.getUserId());
+//            userIdList.addAll(parentUserId);
+//            userIdList.addAll(childUserId);
+//            //查询用户信息一级二级评论用户和视频发布用户一起查询
+//            List<UserInfo> userInfos = userService.batchGetUserInfoByUserIds(userIdList);
+//            Map<Long, UserInfo> userInfoMap = userInfos.stream().collect(Collectors.toMap(UserInfo::getUserId, userInfo -> userInfo));
+//
+//            comments.forEach(comment->{
+//                Long id = comment.getId();
+//                List<VideoComment> childList = new ArrayList<>();
+//                childComments.forEach(childComment ->{
+//                    if (id.equals(childComment.getRootId())) {
+//                        childComment.setUserInfo(userInfoMap.get(childComment.getRootId()));
+//                        childComment.setReplyUserInfo(userInfoMap.get(childComment.getReplyUserId()));
+//                        childList.add(childComment);
+//                    }
+//                });
+//                comment.setChildList(childList);
+//                comment.setUserInfo(userInfoMap.get(comment.getRootId()));
+//            });
+//
+//        }
         return null;
     }
 }

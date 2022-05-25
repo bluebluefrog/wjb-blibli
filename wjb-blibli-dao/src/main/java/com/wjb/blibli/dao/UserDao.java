@@ -33,8 +33,10 @@ public interface UserDao {
 
     Integer deleteRefreshToken(@Param("refreshToken") String refreshToken, @Param("userId") Long userId);
 
-    Integer addRefreshToken(@Param("refreshToken")String refreshToken,  @Param("userId")Long userId, @Param("createTime") Date createTime);
+    Integer addRefreshToken(@Param("refreshToken") String refreshToken, @Param("userId") Long userId, @Param("createTime") Date createTime);
 
     RefreshTokenDetail getRefreshTokenDetail(@Param("refreshToken") String refreshToken);
 
     List<UserInfo> batchGetUserInfoByUserIds(Set<Long> userIdList);
+}
+
