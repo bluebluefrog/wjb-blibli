@@ -1,10 +1,7 @@
 package com.wjb.blibli.controller;
 
 import com.wjb.blibli.controller.support.UserSupport;
-import com.wjb.blibli.domain.JsonResponse;
-import com.wjb.blibli.domain.PageResult;
-import com.wjb.blibli.domain.Video;
-import com.wjb.blibli.domain.VideoCollection;
+import com.wjb.blibli.domain.*;
 import com.wjb.blibli.service.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -81,13 +78,31 @@ public class VideoController {
     }
 
     @GetMapping("/video-collections")
-    public JsonResponse<String> getVideoCollection(@RequestParam Long videoId){
+    public JsonResponse<Map<String,Object>> getVideoCollection(@RequestParam Long videoId){
         Long currentUserId = null;
         try{
             currentUserId = userSupport.getCurrentUserId();
         }catch(Exception e){}
         Map<String,Object> result=videoService.getVideoCollection(videoId, currentUserId);
+        return new JsonResponse<>(result);
+    }
+
+    @PostMapping("/video-coins")
+    public JsonResponse<String> addVideoCoins(@RequestBody VideoCoin videoCoin){
+        Long currentUserId = userSupport.getCurrentUserId();
+        videoService.addVideoCoins(videoCoin, currentUserId);
         return JsonResponse.success();
     }
+
+    @GetMapping("/video-coins")
+    public JsonResponse<Map<String,Object>> getVideoCoins(@RequestParam Long videoId){
+        Long currentUserId = null;
+        try{
+            currentUserId = userSupport.getCurrentUserId();
+        }catch(Exception e){}
+        Map<String,Object> result=videoService.getVideoCoins(videoId, currentUserId);
+        return new JsonResponse<>(result);
+    }
+
 }
 

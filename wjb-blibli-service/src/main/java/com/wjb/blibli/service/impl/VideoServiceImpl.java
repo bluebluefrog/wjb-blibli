@@ -22,6 +22,9 @@ public class VideoServiceImpl implements VideoService {
     @Autowired
     private FastDFSUtil fastDFSUtil;
 
+    @Autowired
+    private UserCoinService userCoinService;
+
     @Transactional
     public void addVideo(Video video) {
         //添加视频
@@ -68,14 +71,17 @@ public class VideoServiceImpl implements VideoService {
     }
 
     public void addVideoLike(Long videoId, Long userId) {
+        //检查视频是否存在
         Video video = videoDao.getVideoById(videoId);
         if(video == null){
             throw new ConditionException("illgel video！");
         }
+        //检查是否已经点赞
         VideoLike videoLike = videoDao.getVideoLikeByVideoIdAndUserId(videoId, userId);
         if(videoLike != null){
             throw new ConditionException("like already！");
         }
+        //新增点赞
         videoLike = new VideoLike();
         videoLike.setVideoId(videoId);
         videoLike.setUserId(userId);
@@ -88,8 +94,11 @@ public class VideoServiceImpl implements VideoService {
     }
 
     public Map<String, Object> getVideoLikes(Long videoId, Long userId) {
+        //获取视频总点赞数
         Long count = videoDao.getVideoLikes(videoId);
+        //获取用户是否点赞
         VideoLike videoLike = videoDao.getVideoLikeByVideoIdAndUserId(videoId, userId);
+        //已点赞赋值true
         boolean like = videoLike != null;
         Map<String, Object> result = new HashMap<>();
         result.put("count", count);
@@ -102,6 +111,7 @@ public class VideoServiceImpl implements VideoService {
         Long count = videoDao.getVideoCollections(videoId);
         //获得用户是否收藏
         VideoCollection videoCollection = videoDao.getVideoCollectionByVideoIdAndUserId(videoId, currentUserId);
+        //已收藏赋值true
         boolean like = videoCollection != null;
         HashMap<String, Object> result = new HashMap<>();
         result.put("count", count);
@@ -118,6 +128,7 @@ public class VideoServiceImpl implements VideoService {
     public void addVideoCollection(VideoCollection videoCollection, Long currentUserId) {
         Long videoId = videoCollection.getVideoId();
         Long groupId = videoCollection.getGroupId();
+        //参数校验
         if (videoId == null || groupId == null) {
             throw new ConditionException("bad param!");
         }
@@ -132,5 +143,25 @@ public class VideoServiceImpl implements VideoService {
         videoCollection.setUserId(currentUserId);
         videoCollection.setCreateTime(new Date());
         videoDao.addVideoCollection(videoCollection);
+    }
+
+    public Map<String, Object> getVideoCoins(Long videoId, Long currentUserId) {
+        return null;
+    }
+
+    @Transactional
+    public void addVideoCoins(VideoCoin videoCoin, Long currentUserId) {
+        Long videoId = videoCoin.getVideoId();
+        Integer amount = videoCoin.getAmount();
+        //检查视频是否存在
+        if (videoId == null) {
+            throw new ConditionException("param error!");
+        }
+        Video videoById = videoDao.getVideoById(videoId);
+        if (videoById == null) {
+            throw new ConditionException("illgel video!");
+        }
+        //查询用户是否有足够硬币
+        use
     }
 }
