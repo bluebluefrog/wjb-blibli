@@ -104,5 +104,19 @@ public class VideoController {
         return new JsonResponse<>(result);
     }
 
+    @PostMapping("/video-comment")
+    public JsonResponse<String> addVideoComment(@RequestBody VideoComment videoComment){
+        Long currentUserId = userSupport.getCurrentUserId();
+        videoService.addVideoComment(videoComment, currentUserId);
+        return JsonResponse.success();
+    }
+
+    @GetMapping("/video-comment")
+    public JsonResponse<Map<String, Object>> getVideoComment(@RequestParam Integer size,
+                                                             @RequestParam Integer no,
+                                                             @RequestParam Long videoId) {
+        Map<String, Object> result = videoService.getVideoComment(size,no,videoId);
+        return new JsonResponse<>(result);
+    }
 }
 

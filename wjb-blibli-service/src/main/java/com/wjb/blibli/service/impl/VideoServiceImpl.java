@@ -4,6 +4,7 @@ import com.wjb.blibli.dao.VideoDao;
 import com.wjb.blibli.domain.*;
 import com.wjb.blibli.domain.exception.ConditionException;
 import com.wjb.blibli.service.UserCoinService;
+import com.wjb.blibli.service.UserService;
 import com.wjb.blibli.service.VideoService;
 import com.wjb.blibli.util.FastDFSUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class VideoServiceImpl implements VideoService {
@@ -25,6 +27,9 @@ public class VideoServiceImpl implements VideoService {
 
     @Autowired
     private UserCoinService userCoinService;
+
+    @Autowired
+    private UserService userService;
 
     @Transactional
     public void addVideo(Video video) {
@@ -196,5 +201,59 @@ public class VideoServiceImpl implements VideoService {
         //更新用户硬币总数
         userCoinService.updateUserCoinsAmount(currentUserId, (userCoinsAmount - amount));
 
+    }
+
+    @Transactional
+    public void addVideoComment(VideoComment videoComment, Long currentUserId) {
+        //添加视频评论(可以额外验证如果rootId存在 查询一下db中是否存在上层节点)
+        Long videoId = videoComment.getVideoId();
+        if (videoId == null) {
+            throw new ConditionException("param error!");
+        }
+        Video video = videoDao.getVideoById(videoId);
+        if (video == null) {
+            throw new ConditionException("illgel video!");
+        }
+        videoComment.setUserId(currentUserId);
+        videoComment.setCreateTime(new Date());
+        videoDao.addVideoComment(videoComment);
+    }
+
+    public Map<String, Object> getVideoComment(Integer size, Integer no, Long videoId) {
+        Video video = videoDao.getVideoById(videoId);
+        if (video == null) {
+            throw new ConditionException("illgel video!");
+        }
+        //设置分页查询
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("start", (no - 1) * size);
+        params.put("limit", size);
+        params.put("videoId", videoId);
+        Integer total = videoDao.pageCountVideoComments(params);
+        List<VideoComment> comments = new ArrayList<>();
+        //总数大于0则进行
+        if (total > 0) {
+            //查询以及评论
+            comments = videoDao.pageListVideoComments(params);
+            //筛选出一级评论的id
+            List<Long> parentIdList = comments.stream().map(VideoComment::getId).collect(Collectors.toList());
+            //根据一级评论id查询二级评论
+            List<VideoComment> childComments = videoDao.batchGetVideoCommentsByRootIds(parentIdList);
+            //筛选一级评论用户id
+            Set<Long> parentUserId = comments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
+            //筛选二级评论用户id
+            Set<Long> childUserId = childComments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
+            //获取视频发布用户UserId
+            Set<Long> userIdList = new HashSet<>();
+            userIdList.add(video.getUserId());
+            userIdList.addAll(parentUserId);
+            userIdList.addAll(childUserId);
+            //查询用户信息一级二级评论用户和视频发布用户一起查询
+            userService.
+
+
+            userService.getUserInfoByIds(parentIdList);
+        }
+        return null;
     }
 }

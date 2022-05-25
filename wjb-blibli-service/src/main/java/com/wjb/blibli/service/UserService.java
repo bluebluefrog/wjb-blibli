@@ -28,4 +28,6 @@ public interface UserService {
     void logout(String refreshToken, Long userId);
 
     String refreshAccessToken(String refreshToken) throws Exception;
+
+    List<UserInfo> batchGetUserInfoByUserIds(Set<Long> userIdList);
 }

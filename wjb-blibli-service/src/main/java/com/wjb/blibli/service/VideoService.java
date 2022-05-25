@@ -1,9 +1,6 @@
 package com.wjb.blibli.service;
 
-import com.wjb.blibli.domain.PageResult;
-import com.wjb.blibli.domain.Video;
-import com.wjb.blibli.domain.VideoCoin;
-import com.wjb.blibli.domain.VideoCollection;
+import com.wjb.blibli.domain.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,4 +28,8 @@ public interface VideoService {
     Map<String, Object> getVideoCoins(Long videoId, Long currentUserId);
 
     void addVideoCoins(VideoCoin videoCoin, Long currentUserId);
+
+    void addVideoComment(VideoComment videoComment, Long currentUserId);
+
+    Map<String, Object> getVideoComment(Integer size, Integer no, Long videoId);
 }
