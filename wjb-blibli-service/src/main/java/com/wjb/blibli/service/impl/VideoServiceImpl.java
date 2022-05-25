@@ -269,4 +269,15 @@ public class VideoServiceImpl implements VideoService {
 //        }
         return null;
     }
+
+    public Map<String, Object> getVideoDetail(Long videoId) {
+        Video video = videoDao.getVideoDetails(videoId);
+        Long userId = video.getUserId();
+        User user = userService.getUserInfo(userId);
+        UserInfo userInfo = user.getUserInfo();
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("video", video);
+        result.put("userInfo", userInfo);
+        return result;
+    }
 }

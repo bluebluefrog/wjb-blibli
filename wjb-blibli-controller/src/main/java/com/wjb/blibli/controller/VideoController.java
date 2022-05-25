@@ -118,5 +118,11 @@ public class VideoController {
         Map<String, Object> result = videoService.getVideoComment(size,no,videoId);
         return new JsonResponse<>(result);
     }
+
+    @GetMapping("/video-detail")
+    public JsonResponse<String> getVideoDetail(@RequestParam Long videoId){
+        Map<String, Object> result = videoService.getVideoDetail(videoId);
+        return JsonResponse.success();
+    }
 }
 
