@@ -205,7 +205,7 @@ public class VideoServiceImpl implements VideoService {
 
     @Transactional
     public void addVideoComment(VideoComment videoComment, Long currentUserId) {
-        //添加视频评论(可以额外验证如果rootId存在 查询一下db中是否存在上层节点)
+        //添加视频评论(可以额外验证如果rootId或repleyId存在 查询一下db中是否存在上层节点)
         Long videoId = videoComment.getVideoId();
         if (videoId == null) {
             throw new ConditionException("param error!");
@@ -219,55 +219,58 @@ public class VideoServiceImpl implements VideoService {
         videoDao.addVideoComment(videoComment);
     }
 
-    public Map<String, Object> getVideoComment(Integer size, Integer no, Long videoId) {
-//        Video video = videoDao.getVideoById(videoId);
-//        if (video == null) {
-//            throw new ConditionException("illgel video!");
-//        }
-//        //设置分页查询
-//        HashMap<String, Object> params = new HashMap<>();
-//        params.put("start", (no - 1) * size);
-//        params.put("limit", size);
-//        params.put("videoId", videoId);
-//        Integer total = videoDao.pageCountVideoComments(params);
-//        List<VideoComment> comments = new ArrayList<>();
-//        //总数大于0则进行
-//        if (total > 0) {
-//            //查询以及评论
-//            comments = videoDao.pageListVideoComments(params);
-//            //筛选出一级评论的id
-//            List<Long> parentIdList = comments.stream().map(VideoComment::getId).collect(Collectors.toList());
-//            //根据一级评论id查询二级评论
-//            List<VideoComment> childComments = videoDao.batchGetVideoCommentsByRootIds(parentIdList);
-//            //筛选一级评论用户id
-//            Set<Long> parentUserId = comments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
-//            //筛选二级评论用户id
-//            Set<Long> childUserId = childComments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
-//            //获取视频发布用户UserId
-//            Set<Long> userIdList = new HashSet<>();
-//            userIdList.add(video.getUserId());
-//            userIdList.addAll(parentUserId);
-//            userIdList.addAll(childUserId);
-//            //查询用户信息一级二级评论用户和视频发布用户一起查询
-//            List<UserInfo> userInfos = userService.batchGetUserInfoByUserIds(userIdList);
-//            Map<Long, UserInfo> userInfoMap = userInfos.stream().collect(Collectors.toMap(UserInfo::getUserId, userInfo -> userInfo));
-//
-//            comments.forEach(comment->{
-//                Long id = comment.getId();
-//                List<VideoComment> childList = new ArrayList<>();
-//                childComments.forEach(childComment ->{
-//                    if (id.equals(childComment.getRootId())) {
-//                        childComment.setUserInfo(userInfoMap.get(childComment.getRootId()));
-//                        childComment.setReplyUserInfo(userInfoMap.get(childComment.getReplyUserId()));
-//                        childList.add(childComment);
-//                    }
-//                });
-//                comment.setChildList(childList);
-//                comment.setUserInfo(userInfoMap.get(comment.getRootId()));
-//            });
-//
-//        }
-        return null;
+    public PageResult<VideoComment> getVideoComment(Integer size, Integer no, Long videoId) {
+        Video video = videoDao.getVideoById(videoId);
+        if (video == null) {
+            throw new ConditionException("illgel video!");
+        }
+        //设置分页查询
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("start", (no - 1) * size);
+        params.put("limit", size);
+        params.put("videoId", videoId);
+        Integer total = videoDao.pageCountVideoComments(params);
+        List<VideoComment> comments = new ArrayList<>();
+        //总数大于0则进行
+        if (total > 0) {
+            //查询以及评论
+            comments = videoDao.pageListVideoComments(params);
+            //筛选出一级评论的id
+            List<Long> parentIdList = comments.stream().map(VideoComment::getId).collect(Collectors.toList());
+            //根据一级评论id查询二级评论
+            List<VideoComment> childComments = videoDao.batchGetVideoCommentsByRootIds(parentIdList);
+            //筛选一级评论用户id
+            Set<Long> userIdList = comments.stream().map(VideoComment::getUserId).collect(Collectors.toSet());
+            //筛选二级评论用户id
+            Set<Long> childUserId = childComments.stream().map(VideoComment::getUserId).collect(Collectors.toSet());
+            //筛选二级评论回复的用户id
+            Set<Long> replyUserId = childComments.stream().map(VideoComment::getReplyUserId).collect(Collectors.toSet());
+            //将所有id添加到一个set进行查询
+            userIdList.addAll(childUserId);
+            userIdList.addAll(replyUserId);
+
+            //查询用户信息一级二级评论用户和二级评论回复的用户一起查询
+            List<UserInfo> userInfos = userService.batchGetUserInfoByUserIds(userIdList);
+            Map<Long, UserInfo> userInfoMap = userInfos.stream().collect(Collectors.toMap(UserInfo::getUserId, userInfo -> userInfo));
+
+            //循环比较哪些二级评论的rootId是以及评论的id
+            comments.forEach(comment->{
+                Long id = comment.getId();
+                List<VideoComment> childList = new ArrayList<>();
+                childComments.forEach(childComment ->{
+                    if (id.equals(childComment.getRootId())) {
+                        //如果是则通过user设置用户info
+                        childComment.setUserInfo(userInfoMap.get(childComment.getUserId()));
+                        childComment.setReplyUserInfo(userInfoMap.get(childComment.getReplyUserId()));
+                        childList.add(childComment);
+                    }
+                });
+                comment.setChildList(childList);
+                comment.setUserInfo(userInfoMap.get(comment.getUserId()));
+            });
+
+        }
+        return new PageResult<>(total,comments);
     }
 
     public Map<String, Object> getVideoDetail(Long videoId) {

@@ -31,7 +31,7 @@ public interface VideoService {
 
     void addVideoComment(VideoComment videoComment, Long currentUserId);
 
-    Map<String, Object> getVideoComment(Integer size, Integer no, Long videoId);
+    PageResult<VideoComment> getVideoComment(Integer size, Integer no, Long videoId);
 
     Map<String, Object> getVideoDetail(Long videoId);
 }
