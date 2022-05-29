@@ -34,7 +34,7 @@ public class RocketMQUtil {
                 @Override
                 public void onException(Throwable e) {
                     countDownLatch.countDown();
-                    System.out.println("发送消息发生了异常！" + e);
+                    System.out.println("error when sending message！" + e);
                     e.printStackTrace();
                 }
             });
