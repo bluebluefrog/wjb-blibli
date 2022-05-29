@@ -2,6 +2,7 @@ package com.wjb.blibli.controller;
 
 import com.wjb.blibli.controller.support.UserSupport;
 import com.wjb.blibli.domain.*;
+import com.wjb.blibli.service.ElasticSearchService;
 import com.wjb.blibli.service.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -19,11 +20,16 @@ public class VideoController {
     @Autowired
     private UserSupport userSupport;
 
+    @Autowired
+    private ElasticSearchService elasticSearchService;
+
     @PostMapping("/videos")
     public JsonResponse<String> addVideos(@RequestBody Video video) {
         Long currentUserId = userSupport.getCurrentUserId();
         video.setUserId(currentUserId);
         videoService.addVideo(video);
+        //在es中添加视频数据 由于需要主键id所以需要在video添加到数据后后进行es存储
+        elasticSearchService.addVideo(video);
         return JsonResponse.success();
     }
 
