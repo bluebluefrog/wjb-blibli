@@ -4,6 +4,7 @@ import com.wjb.blibli.controller.support.UserSupport;
 import com.wjb.blibli.domain.*;
 import com.wjb.blibli.service.ElasticSearchService;
 import com.wjb.blibli.service.VideoService;
+import org.apache.mahout.cf.taste.common.TasteException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -152,7 +153,7 @@ public class VideoController {
     }
 
     @GetMapping("/recommendations")
-    public JsonResponse<List<Video>> recommend(){
+    public JsonResponse<List<Video>> recommend() throws TasteException {
         Long currentUserId = userSupport.getCurrentUserId();
         List<Video> recommendList = videoService.recommend(currentUserId);
         return new JsonResponse<>(recommendList);

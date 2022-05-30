@@ -341,6 +341,7 @@ public class VideoServiceImpl implements VideoService {
         return videoDao.getVideoViewCounts(videoId);
     }
 
+    //基于用户推荐
     public List<Video> recommend(Long currentUserId) throws TasteException {
         List<UserPreference> allUserPreference = videoDao.getAllUserPreference();
         //创建数据模型 mahout提供的数据分析模型
