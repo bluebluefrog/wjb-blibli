@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -130,5 +131,33 @@ public class VideoController {
         Map<String, Object> result = videoService.getVideoDetail(videoId);
         return JsonResponse.success();
     }
+
+    @PostMapping("/video=views")
+    public JsonResponse<String> addVideoView(@RequestBody VideoView videoView, HttpServletRequest request) {
+        Long userId;
+        try {
+            userId = userSupport.getCurrentUserId();
+            videoView.setUserId(userId);
+            videoService.addVideoView(videoView, request);
+        } catch (Exception e) {
+            videoService.addVideoView(videoView, request);
+        }
+        return JsonResponse.success();
+    }
+
+    @GetMapping("/video-view-counts")
+    public JsonResponse<Integer> getVideoViewCounts(@RequestParam Long videoId) {
+        Integer count = videoService.getVideoViewCounts(videoId);
+        return new JsonResponse<>(count);
+    }
+
+    @GetMapping("/recommendations")
+    public JsonResponse<List<Video>> recommend(){
+        Long currentUserId = userSupport.getCurrentUserId();
+        List<Video> recommendList = videoService.recommend(currentUserId);
+        return new JsonResponse<>(recommendList);
+    }
+
+
 }
 
