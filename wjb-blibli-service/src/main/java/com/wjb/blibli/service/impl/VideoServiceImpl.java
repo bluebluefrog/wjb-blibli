@@ -1,13 +1,14 @@
 package com.wjb.blibli.service.impl;
 
-import com.mysql.cj.x.protobuf.MysqlxCrud;
 import com.wjb.blibli.dao.VideoDao;
 import com.wjb.blibli.domain.*;
 import com.wjb.blibli.domain.exception.ConditionException;
+import com.wjb.blibli.service.FileService;
 import com.wjb.blibli.service.UserCoinService;
 import com.wjb.blibli.service.UserService;
 import com.wjb.blibli.service.VideoService;
 import com.wjb.blibli.util.FastDFSUtil;
+import com.wjb.blibli.util.ImageUtil;
 import com.wjb.blibli.util.IpUtil;
 import eu.bitwalker.useragentutils.UserAgent;
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -26,12 +27,21 @@ import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
+import org.bytedeco.javacv.Java2DFrameConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,10 +56,18 @@ public class VideoServiceImpl implements VideoService {
     private FastDFSUtil fastDFSUtil;
 
     @Autowired
+    private ImageUtil imageUtil;
+
+    @Autowired
     private UserCoinService userCoinService;
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private FileService fileService;
+
+    private static final int FRAME_NO = 256;
 
     @Transactional
     public void addVideo(Video video) {
@@ -365,7 +383,6 @@ public class VideoServiceImpl implements VideoService {
         return videoDao.batchGetVideosByIds(itemIds);
     }
 
-
     //基于内容的协同推荐
     //@param userId 用户id
     //@param itemId 参考内容id（根据该内容进行相似内容推荐）
@@ -387,7 +404,7 @@ public class VideoServiceImpl implements VideoService {
     }
 
     //将偏好数据输入模型 可以在模型当中存储相关的偏好数据得分
-    private DataModel createDataModel(List<UserPreference> userPreferenceList) {
+    public DataModel createDataModel(List<UserPreference> userPreferenceList) {
         FastByIDMap<PreferenceArray> fastByIdMap = new FastByIDMap<>();
         //通过lambda对用户偏好进行分组 转换成map形式userid对应用户偏好得分
         Map<Long, List<UserPreference>> map = userPreferenceList.stream().collect(Collectors.groupingBy(UserPreference::getUserId));
@@ -407,5 +424,81 @@ public class VideoServiceImpl implements VideoService {
             fastByIdMap.put(array[0].getUserID(), new GenericUserPreferenceArray(Arrays.asList(array)));
         }
         return new GenericDataModel(fastByIdMap);
+    }
+
+    public List<VideoBinaryPicture> convertVideoToImage(Long videoId, String fileMd5) throws Exception {
+        //根据文件md5查询相关视频文件
+        File fileByMd5 = fileService.getFileByMd5(fileMd5);
+        //当有多个服务器分布式时 单机视频处理会出现问题所以需要先下载
+        //本地下载路径
+        String filePath = "/Users/hat/tmpfile/fileForVideoId" + videoId + "." + fileByMd5.getType();
+        //根据数据库中视频的url下载文件到本地
+        fastDFSUtil.downLoadFile(fileByMd5.getUrl(),filePath);
+        //FFmpegFrameGrabber在javacv中使用 用于截取视频帧的类
+        //通过文件的路径生成相关实体类参数1路径
+        FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(filePath);
+        //调用开始方法
+        fFmpegFrameGrabber.start();
+        //获取视频中总帧数
+        int ffLength = fFmpegFrameGrabber.getLengthInFrames();
+        //新建帧 用于后面储存帧 每一帧重新赋值
+        Frame frame;
+        //转换器 将截取的帧进行内容转换 用于把帧转换成文件类
+        Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
+        //用于记录什么时候需要截取帧进行图片转换 每256帧进行一次转换 节省性能不至于每一帧都需要转换
+        int count = 1;
+        //用于存储转换完的黑白图片
+        List<VideoBinaryPicture> pictureList = new ArrayList<>();
+        //对每一帧进行遍历
+        for (int i = 0; i < ffLength; i++) {
+            //获取当前帧时间戳
+            long timestamp = fFmpegFrameGrabber.getTimestamp();
+            //获取当前帧图片
+            frame = fFmpegFrameGrabber.grabImage();
+            //当count(用于记录哪帧需要被截取的变量)等于i(当前帧)时截取
+            if (count == i) {
+                //当前帧图片不存在报错
+                if (frame == null) {
+                    throw new ConditionException("illgel frame");
+                }
+                //利用转换器将帧图片转换成BufferedImage(一种图片的数据形式).getBufferedImage()参数Frame
+                BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
+                //新建一个ByteArrayOutputStream输出流
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                //将转换过的帧图片img传入输出到本地文件png格式
+                //.write()参数1RenderedImage实现类参数2格式参数3输出流
+                ImageIO.write(bufferedImage, "png", os);
+                //将输出流转化成输入流 在黑白剪影图片方法中需要用到输入流
+                ByteArrayInputStream inputStream = new ByteArrayInputStream(os.toByteArray());
+                //输出黑白剪影文件
+                //指定临时文件 方便文件输出
+                java.io.File outputFile = java.io.File.createTempFile("convert-" + videoId + "-" , ".png");
+                //将文件转换成黑白剪影
+                BufferedImage binaryImage = imageUtil.getBodyOutline(bufferedImage, inputStream);
+                ImageIO.write(binaryImage, "png", outputFile);
+                //有的浏览器或网站需要把图片白色的部分转为透明色，使用以下方法可实现
+                imageUtil.transferAlpha(outputFile, outputFile);
+                //上传视频剪影文件
+                //将视频上传到fastDFS
+                String imgUrl = fastDFSUtil.uploadCommFile(outputFile, "png");
+                //设置储存到数据库的值
+                VideoBinaryPicture videoBinaryPicture = new VideoBinaryPicture();
+                videoBinaryPicture.setFrameNo(i);
+                videoBinaryPicture.setUrl(imgUrl);
+                videoBinaryPicture.setVideoId(videoId);
+                videoBinaryPicture.setVideoTimestamp(timestamp);
+                pictureList.add(videoBinaryPicture);
+                //count+256
+                count += FRAME_NO;
+                //删除临时文件
+                outputFile.delete();
+            }
+        }
+        //删除临时文件
+        java.io.File tmpFile = new java.io.File(filePath);
+        tmpFile.delete();
+        //批量添加视频剪影文件
+        videoDao.batchAddVideoBinaryPictures(pictureList);
+        return pictureList;
     }
 }

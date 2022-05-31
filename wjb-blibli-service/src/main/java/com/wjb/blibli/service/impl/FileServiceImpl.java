@@ -49,4 +49,8 @@ public class FileServiceImpl implements FileService {
         return MD5Util.getFileMD5(file);
     }
 
+    public File getFileByMd5(String fileMd5) {
+        return fileDao.getFileByMD5(fileMd5);
+    }
+
 }

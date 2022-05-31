@@ -72,48 +72,50 @@ public class VideoController {
     }
 
     @PostMapping("/video-collections")
-    public JsonResponse<String> addVideoCollection(@RequestBody VideoCollection videoCollection){
+    public JsonResponse<String> addVideoCollection(@RequestBody VideoCollection videoCollection) {
         Long currentUserId = userSupport.getCurrentUserId();
         videoService.addVideoCollection(videoCollection, currentUserId);
         return JsonResponse.success();
     }
 
     @DeleteMapping("/video-collections")
-    public JsonResponse<String> deleteVideoCollection(@RequestParam Long videoId){
+    public JsonResponse<String> deleteVideoCollection(@RequestParam Long videoId) {
         Long currentUserId = userSupport.getCurrentUserId();
         videoService.deleteVideoCollection(videoId, currentUserId);
         return JsonResponse.success();
     }
 
     @GetMapping("/video-collections")
-    public JsonResponse<Map<String,Object>> getVideoCollection(@RequestParam Long videoId){
+    public JsonResponse<Map<String, Object>> getVideoCollection(@RequestParam Long videoId) {
         Long currentUserId = null;
-        try{
+        try {
             currentUserId = userSupport.getCurrentUserId();
-        }catch(Exception e){}
-        Map<String,Object> result=videoService.getVideoCollection(videoId, currentUserId);
+        } catch (Exception e) {
+        }
+        Map<String, Object> result = videoService.getVideoCollection(videoId, currentUserId);
         return new JsonResponse<>(result);
     }
 
     @PostMapping("/video-coins")
-    public JsonResponse<String> addVideoCoins(@RequestBody VideoCoin videoCoin){
+    public JsonResponse<String> addVideoCoins(@RequestBody VideoCoin videoCoin) {
         Long currentUserId = userSupport.getCurrentUserId();
         videoService.addVideoCoins(videoCoin, currentUserId);
         return JsonResponse.success();
     }
 
     @GetMapping("/video-coins")
-    public JsonResponse<Map<String,Object>> getVideoCoins(@RequestParam Long videoId){
+    public JsonResponse<Map<String, Object>> getVideoCoins(@RequestParam Long videoId) {
         Long currentUserId = null;
-        try{
+        try {
             currentUserId = userSupport.getCurrentUserId();
-        }catch(Exception e){}
-        Map<String,Object> result=videoService.getVideoCoins(videoId, currentUserId);
+        } catch (Exception e) {
+        }
+        Map<String, Object> result = videoService.getVideoCoins(videoId, currentUserId);
         return new JsonResponse<>(result);
     }
 
     @PostMapping("/video-comments")
-    public JsonResponse<String> addVideoComment(@RequestBody VideoComment videoComment){
+    public JsonResponse<String> addVideoComment(@RequestBody VideoComment videoComment) {
         Long currentUserId = userSupport.getCurrentUserId();
         videoService.addVideoComment(videoComment, currentUserId);
         return JsonResponse.success();
@@ -121,14 +123,14 @@ public class VideoController {
 
     @GetMapping("/video-comments")
     public JsonResponse<PageResult<VideoComment>> getVideoComment(@RequestParam Integer size,
-                                                             @RequestParam Integer no,
-                                                             @RequestParam Long videoId) {
-        PageResult<VideoComment> result = videoService.getVideoComment(size,no,videoId);
+                                                                  @RequestParam Integer no,
+                                                                  @RequestParam Long videoId) {
+        PageResult<VideoComment> result = videoService.getVideoComment(size, no, videoId);
         return new JsonResponse<>(result);
     }
 
     @GetMapping("/video-detail")
-    public JsonResponse<String> getVideoDetail(@RequestParam Long videoId){
+    public JsonResponse<String> getVideoDetail(@RequestParam Long videoId) {
         Map<String, Object> result = videoService.getVideoDetail(videoId);
         return JsonResponse.success();
     }
@@ -159,6 +161,12 @@ public class VideoController {
         return new JsonResponse<>(recommendList);
     }
 
-
+    //视频帧截取生成黑白剪影
+    @GetMapping("/video-frames")
+    public JsonResponse<List<VideoBinaryPicture>> captureVideoFrame(@RequestParam Long videoId,
+                                                                    @RequestParam String fileMd5) throws Exception {
+        List<VideoBinaryPicture> list=videoService.convertVideoToImage(videoId, fileMd5);
+        return new JsonResponse<>(list);
+    }
 }
 

@@ -1,8 +1,7 @@
 package com.wjb.blibli.service;
 
+import com.wjb.blibli.domain.File;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
 
 public interface FileService {
 
@@ -13,4 +12,5 @@ public interface FileService {
 
     String getFileMD5(MultipartFile file) throws Exception;
 
+    File getFileByMd5(String fileMd5);
 }

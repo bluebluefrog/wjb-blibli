@@ -3,6 +3,7 @@ package com.wjb.blibli.util;
 import com.github.tobato.fastdfs.domain.fdfs.FileInfo;
 import com.github.tobato.fastdfs.domain.fdfs.MetaData;
 import com.github.tobato.fastdfs.domain.fdfs.StorePath;
+import com.github.tobato.fastdfs.domain.proto.storage.DownloadCallback;
 import com.github.tobato.fastdfs.service.AppendFileStorageClient;
 import com.github.tobato.fastdfs.service.FastFileStorageClient;
 import com.wjb.blibli.domain.exception.ConditionException;
@@ -15,10 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.*;
 
 @Repository
@@ -79,6 +77,13 @@ public class FastDFSUtil {
         //返回存储相对路径
         return storePath.getPath();
 
+    }
+
+    public String uploadCommFile(File file, String fileType) throws Exception {
+        Set<MetaData> metaDataSet = new HashSet<>();
+        StorePath storePath = fastFileStorageClient.uploadFile(new FileInputStream(file),
+                file.length(), fileType, metaDataSet);
+        return storePath.getPath();
     }
 
     //上传断点续传第一个文件分片
@@ -277,5 +282,24 @@ public class FastDFSUtil {
         //get方法返回输出流OutputStream参数1链接2请求头3响应
         //方法会对response做进一步的处理 使用get请求将数据写入到response中
         HttpUtil.get(url, headers, response);
+    }
+
+    public void downLoadFile(String url, String localPath) {
+        fastFileStorageClient.downloadFile(DEFAULT_GROUP, url,
+                new DownloadCallback<String>() {
+                    @Override
+                    public String recv(InputStream ins) throws IOException {
+                        File file = new File(localPath);
+                        OutputStream os = new FileOutputStream(file);
+                        int len = 0;
+                        byte[] buffer = new byte[1024];
+                        while ((len = ins.read(buffer)) != -1) {
+                            os.write(buffer, 0, len);
+                        }
+                        os.close();
+                        ins.close();
+                        return "success";
+                    }
+                });
     }
 }
